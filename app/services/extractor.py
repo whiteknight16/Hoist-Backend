@@ -284,25 +284,29 @@ def _approx_filesize(info: dict[str, Any], fmt: CuratedFormat) -> int | None:
 def curate_formats(info: dict[str, Any]) -> list[dict[str, Any]]:
     """Build the curated, frontend-facing format list from raw yt-dlp info.
 
-    Includes: best available, plus 1080/720/480 tiers that the video actually
-    supports (no duplicates above the source resolution), plus one best-audio.
+    Includes: best available, plus only the 1080/720/480 tiers strictly below
+    the source resolution (so no tier duplicates or overshoots "best"), plus one
+    best-audio. When yt-dlp reports no height (common for Instagram) we can't
+    promise any fixed tier exists, so only "best" + audio are offered.
     """
     max_h = _max_available_height(info)
     width = info.get("width")
     out: list[dict[str, Any]] = []
 
     for fmt in _CURATED_VIDEO:
-        # Skip a tier if the source has no video taller-or-equal than nothing useful;
-        # always keep "best". Skip tiers that exceed the source resolution (would
-        # just duplicate a lower tier / "best").
-        if fmt.max_height is not None and max_h and fmt.max_height > max_h:
-            continue
-        resolution = None
-        if fmt.max_height is None and max_h:
-            resolution = f"{width}x{max_h}" if width else f"{max_h}p"
-        elif fmt.max_height is not None:
-            tier_h = min(fmt.max_height, max_h) if max_h else fmt.max_height
-            resolution = f"{tier_h}p"
+        if fmt.max_height is None:
+            # "Best available" — always offered; labelled with the source
+            # resolution when yt-dlp reported one.
+            resolution = (
+                (f"{width}x{max_h}" if width else f"{max_h}p") if max_h else None
+            )
+        else:
+            # A fixed tier is a real, distinct option only when the source is
+            # taller than it. Skip tiers >= source (they'd just duplicate
+            # "best") and skip every fixed tier when the height is unknown.
+            if not max_h or fmt.max_height >= max_h:
+                continue
+            resolution = f"{fmt.max_height}p"
         out.append(
             {
                 "format_id": fmt.format_id,
