@@ -11,6 +11,8 @@ wheels/
 
 # Local environment config
 .env
+.env.*
+!.env.example
 
 # Temp downloads (keep the directory, ignore its contents)
 downloads/*

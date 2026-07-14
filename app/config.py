@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -20,7 +21,11 @@ class Settings(BaseSettings):
 
     host: str = "0.0.0.0"
     port: int = 8000
-    cors_origins: list[str] = [
+    # NoDecode: skip pydantic-settings' JSON pre-parse so a comma-separated env
+    # string (e.g. "https://a.com,https://b.com") reaches the validator below
+    # instead of failing as invalid JSON.
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "https://hoist.knightdeveloper.com",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",

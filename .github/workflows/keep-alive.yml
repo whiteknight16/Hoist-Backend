@@ -1,0 +1,33 @@
+name: keep-alive
+
+# Pings the Render backend so its free instance never idles into a cold start.
+# Render free web services spin down after ~15 min of no inbound traffic; a hit
+# every ~10 min keeps it warm. GitHub cron can be delayed a few minutes under
+# load, so 10 min leaves margin under the 15 min window.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes (UTC)
+  workflow_dispatch: {}       # allow manual runs from the Actions tab
+
+# Don't stack runs if a previous one is still going.
+concurrency:
+  group: keep-alive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping /api/health
+        run: |
+          URL="https://hoist-backend.knightdeveloper.com/api/health"
+          echo "Pinging $URL"
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 --retry 3 --retry-delay 10 "$URL")
+          echo "HTTP $code"
+          # First hit after a cold start can take a while; treat any 2xx as healthy.
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "Unexpected status $code" >&2
+            exit 1
+          fi
