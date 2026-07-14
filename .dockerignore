@@ -1,0 +1,35 @@
+# Version control
+.git
+.gitignore
+
+# Python virtual env & caches
+.venv
+__pycache__/
+*.py[oc]
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+wheels/
+*.egg-info
+
+# Local env / secrets — never bake into the image
+.env
+.env.*
+!.env.example
+
+# Ephemeral temp downloads
+downloads/*
+!downloads/.gitkeep
+
+# Dev-only files that don't belong in the runtime image
+tests/
+README.md
+Makefile
+Dockerfile
+.dockerignore
+
+# OS/editor cruft
+.DS_Store
+.vscode/
+.idea/
