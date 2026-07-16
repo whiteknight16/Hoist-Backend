@@ -336,6 +336,29 @@ def curate_formats(info: dict[str, Any]) -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 
+# Conventional cookie locations probed when PULLVID_COOKIES_FILE is unset, so
+# cookies work without any env config: drop the file in and it's picked up.
+# /etc/secrets/* is where Render mounts Secret Files; the repo-local names cover
+# local dev. First existing file wins.
+_DEFAULT_COOKIE_PATHS = (
+    "/etc/secrets/instagram_cookies.txt",
+    "/etc/secrets/cookies.txt",
+    "cookies.txt",
+    "app/cookies.txt",
+)
+
+
+def _resolve_cookies_file(settings: Settings) -> str | None:
+    """First existing cookies file: an explicit PULLVID_COOKIES_FILE wins, else
+    fall back to the conventional locations. Only an on-disk file is returned so
+    a missing/misconfigured path degrades to anonymous access instead of an error."""
+    candidates = [settings.cookies_file, *_DEFAULT_COOKIE_PATHS]
+    for path in candidates:
+        if path and Path(path).is_file():
+            return path
+    return None
+
+
 def _base_opts(settings: Settings) -> dict[str, Any]:
     opts: dict[str, Any] = {
         "quiet": True,
@@ -343,8 +366,9 @@ def _base_opts(settings: Settings) -> dict[str, Any]:
         "noplaylist": True,
         "noprogress": True,
     }
-    if settings.cookies_file:
-        opts["cookiefile"] = settings.cookies_file
+    cookies_file = _resolve_cookies_file(settings)
+    if cookies_file:
+        opts["cookiefile"] = cookies_file
     return opts
 
 
