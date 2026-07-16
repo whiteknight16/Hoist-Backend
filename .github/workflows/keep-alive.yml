@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Ping /api/health
         run: |
-          URL="https://hoist-backend.knightdeveloper.com/api/health"
+          URL="https://hoist-backend-v7f9.onrender.com/api/health"
           echo "Pinging $URL"
           code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 --retry 3 --retry-delay 10 "$URL")
           echo "HTTP $code"
